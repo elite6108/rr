@@ -75,6 +75,9 @@ const Tasks = ({
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [testEmailStatus, setTestEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [showTestEmailModal, setShowTestEmailModal] = useState(false);
   const [taskFormData, setTaskFormData] = useState<TaskFormData>({
     title: '',
     description: '',
@@ -309,6 +312,80 @@ const Tasks = ({
     setShowAdminDashboard(true);
   };
 
+  // Send test email
+  const sendTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testEmailAddress) return;
+    
+    setTestEmailStatus('sending');
+    
+    try {
+      // Create a test task
+      const testTask = {
+        id: 0,
+        title: 'Test Email Task',
+        description: 'This is a test email to verify SendGrid is working correctly.',
+        status: 'to_schedule' as const,
+        priority: 'medium' as const,
+        project_id: null,
+        board_id: 1,
+        notes: 'This is a test email sent from the Tasks component.',
+        tags: ['test'],
+        staff_ids: [],
+        due_date: new Date().toISOString().split('T')[0],
+        cost: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        category: null
+      };
+      
+      // Send the test email directly to the provided email address
+      const response = await fetch('/.netlify/functions/send-notification-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient: testEmailAddress,
+          subject: 'SendGrid Test Email',
+          content: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4f46e5;">SendGrid Test Email</h2>
+              <p>This is a test email to verify that SendGrid is working correctly.</p>
+              
+              <div style="background-color: #f9fafb; border-left: 4px solid #4f46e5; padding: 15px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Test Task</h3>
+                <p><strong>Priority:</strong> ${testTask.priority.toUpperCase()}</p>
+                <p><strong>Status:</strong> ${testTask.status.replace('_', ' ')}</p>
+                <p><strong>Due Date:</strong> ${testTask.due_date}</p>
+                <p><strong>Description:</strong> ${testTask.description}</p>
+              </div>
+              
+              <p>If you received this email, your SendGrid configuration is working correctly.</p>
+              <p>This is an automated test email. Please do not reply.</p>
+            </div>
+          `,
+          fromEmail: 'notifications@yourdomain.com'
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to send test email:', errorText);
+        throw new Error(`Failed to send test email: ${errorText}`);
+      }
+      
+      setTestEmailStatus('success');
+      setTimeout(() => {
+        setShowTestEmailModal(false);
+        setTestEmailStatus('idle');
+      }, 3000);
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      setTestEmailStatus('error');
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
     fetchTasks();
@@ -327,6 +404,12 @@ const Tasks = ({
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
             Create New Task
+          </button>
+          <button 
+            onClick={() => setShowTestEmailModal(true)}
+            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Test SendGrid
           </button>
           <button 
             onClick={handleBack}
@@ -423,6 +506,54 @@ const Tasks = ({
           </div>
         )}
       </div>
+
+      {/* SendGrid Test Email Modal */}
+      {showTestEmailModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Test SendGrid Email</h2>
+            <form onSubmit={sendTestEmail}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  value={testEmailAddress}
+                  onChange={(e) => setTestEmailAddress(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter email address"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTestEmailModal(false)}
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                  disabled={testEmailStatus === 'sending'}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`px-4 py-2 rounded text-white ${
+                    testEmailStatus === 'sending' ? 'bg-gray-400 cursor-not-allowed' :
+                    testEmailStatus === 'success' ? 'bg-green-500 hover:bg-green-600' :
+                    testEmailStatus === 'error' ? 'bg-red-500 hover:bg-red-600' :
+                    'bg-purple-500 hover:bg-purple-600'
+                  }`}
+                  disabled={testEmailStatus === 'sending'}
+                >
+                  {testEmailStatus === 'idle' && 'Send Test Email'}
+                  {testEmailStatus === 'sending' && 'Sending...'}
+                  {testEmailStatus === 'success' && 'Email Sent!'}
+                  {testEmailStatus === 'error' && 'Failed - Try Again'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Task Modal */}
       {showTaskModal && (
