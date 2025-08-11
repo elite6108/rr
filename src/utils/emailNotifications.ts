@@ -93,7 +93,7 @@ export const sendTaskAssignmentEmail = async (
           recipient: email,
           subject: emailSubject,
           content: emailContent,
-          fromEmail: configData.notification_from_email || 'notifications@yourdomain.com'
+          fromEmail: configData.notification_from_email || 'support@stonepad.co.uk'
         }),
       });
 
@@ -211,7 +211,7 @@ export const sendCalendarEventAssignmentEmail = async (
           recipient: email,
           subject: emailSubject,
           content: emailContent,
-          fromEmail: configData.notification_from_email || 'notifications@yourdomain.com'
+          fromEmail: configData.notification_from_email || 'support@stonepad.co.uk'
         }),
       });
 
