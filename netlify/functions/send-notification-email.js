@@ -36,7 +36,7 @@ exports.handler = async (event, context) => {
     // Create email message
     const msg = {
       to: recipient,
-      from: fromEmail || process.env.SENDGRID_FROM_EMAIL || 'notifications@yourdomain.com',
+      from: fromEmail || process.env.SENDGRID_FROM_EMAIL || 'support@stonepad.co.uk',
       subject: subject,
       html: content,
     };

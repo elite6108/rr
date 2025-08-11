@@ -192,10 +192,6 @@ const Tasks = ({
         category: taskFormData.category,
       };
 
-      // Variable to store the task ID and task data
-      let taskId: number;
-      let updatedTaskData: Task | null = null;
-      
       // Update or create task
       if (isNewTask) {
         // Create new task
@@ -206,8 +202,7 @@ const Tasks = ({
           .single();
         
         if (error) throw error;
-        taskId = data.id;
-        updatedTaskData = data;
+        const updatedTaskData = data;
       } else {
         // Update existing task
         const { data, error } = await supabase
@@ -218,52 +213,51 @@ const Tasks = ({
           .single();
         
         if (error) throw error;
-        taskId = data.id;
-        updatedTaskData = data;
-      }
+        const updatedTaskData = data;
 
-      // Check if we need to send email notifications
-      if (updatedTaskData) {
-        // Helper function to check if arrays are equal
-        const arraysEqual = (a: number[], b: number[]) => {
-          if (a.length !== b.length) return false;
-          return a.every((val, index) => val === b[index]);
-        };
-        
-        const staffAssignmentsChanged = !arraysEqual(originalStaffIds, taskFormData.staff_ids);
-        
-        // Send email notifications if it's a new task or staff assignments changed
-        if ((isNewTask || staffAssignmentsChanged) && taskFormData.staff_ids.length > 0) {
-          try {
-            await sendTaskAssignmentEmail(updatedTaskData, taskFormData.staff_ids);
-            console.log('Task assignment emails sent successfully');
-          } catch (emailError) {
-            console.error('Error sending task assignment emails:', emailError);
-            // Continue with the task creation/update even if email sending fails
+        // Check if we need to send email notifications
+        if (updatedTaskData) {
+          // Helper function to check if arrays are equal
+          const arraysEqual = (a: number[], b: number[]) => {
+            if (a.length !== b.length) return false;
+            return a.every((val, index) => val === b[index]);
+          };
+          
+          const staffAssignmentsChanged = !arraysEqual(originalStaffIds, taskFormData.staff_ids);
+          
+          // Send email notifications if it's a new task or staff assignments changed
+          if ((isNewTask || staffAssignmentsChanged) && taskFormData.staff_ids.length > 0) {
+            try {
+              await sendTaskAssignmentEmail(updatedTaskData, taskFormData.staff_ids);
+              console.log('Task assignment emails sent successfully');
+            } catch (emailError) {
+              console.error('Error sending task assignment emails:', emailError);
+              // Continue with the task creation/update even if email sending fails
+            }
           }
         }
-      }
 
-      // Reset form and close modal
-      setShowTaskModal(false);
-      setEditingTask(null);
-      setTaskFormData({
-        title: '',
-        description: '',
-        status: 'to_schedule',
-        priority: 'medium',
-        project_id: null,
-        board_id: null,
-        notes: '',
-        tags: [],
-        staff_ids: [],
-        due_date: '',
-        cost: null,
-        category: null,
-      });
-      
-      // Refresh tasks
-      fetchTasks();
+        // Reset form and close modal
+        setShowTaskModal(false);
+        setEditingTask(null);
+        setTaskFormData({
+          title: '',
+          description: '',
+          status: 'to_schedule',
+          priority: 'medium',
+          project_id: null,
+          board_id: null,
+          notes: '',
+          tags: [],
+          staff_ids: [],
+          due_date: '',
+          cost: null,
+          category: null,
+        });
+        
+        // Refresh tasks
+        fetchTasks();
+      }
     } catch (error) {
       console.error('Error saving task:', error);
     }
@@ -365,7 +359,7 @@ const Tasks = ({
               <p>This is an automated test email. Please do not reply.</p>
             </div>
           `,
-          fromEmail: 'notifications@yourdomain.com'
+          fromEmail: 'support@stonepad.co.uk'
         }),
       });
       
