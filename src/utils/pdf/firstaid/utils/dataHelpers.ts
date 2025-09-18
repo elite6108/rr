@@ -34,14 +34,15 @@ function formatLowLevelHazardDetails(data: FirstAidNeedsAssessment): string {
   const customHazards = data.custom_hazards || data.customHazards || [];
   customHazards.forEach((hazard: string) => {
     const detailsKey = `custom_${hazard.replace(/\s+/g, '_').toLowerCase()}Details`;
-    const detailValue = data[detailsKey as keyof FirstAidNeedsAssessment] as string;
+    const altDetailsKey = `custom${hazard.replace(/\s+/g, '').toLowerCase()}Details`;
+    const detailValue = data[detailsKey as keyof FirstAidNeedsAssessment] || data[altDetailsKey as keyof FirstAidNeedsAssessment] as string;
     if (detailValue) {
       details.push(`${toSentenceCase(hazard)}: ${detailValue}`);
     } else {
         // Fallback for jsonb custom hazard details
         const customDetails = data.custom_hazard_details || data.customHazardDetails;
-        if(customDetails && typeof customDetails === 'object' && customDetails[detailsKey]){
-             details.push(`${toSentenceCase(hazard)}: ${customDetails[detailsKey]}`);
+        if(customDetails && typeof customDetails === 'object' && (customDetails[detailsKey] || customDetails[altDetailsKey])){
+             details.push(`${toSentenceCase(hazard)}: ${customDetails[detailsKey] || customDetails[altDetailsKey]}`);
         }
     }
   });
@@ -79,6 +80,16 @@ function formatHighLevelHazardDetails(data: FirstAidNeedsAssessment): string {
       }
     });
   }
+
+  // Also handle direct custom high-level hazard details from the form
+  const customHighLevelHazards = data.customHighLevelHazards || data.custom_high_level_hazards || [];
+  customHighLevelHazards.forEach((hazard: string) => {
+    const detailsKey = `custom_high_${hazard.replace(/\s+/g, '_').toLowerCase()}Details`;
+    const detailValue = data[detailsKey as keyof FirstAidNeedsAssessment] as string;
+    if (detailValue) {
+      details.push(`${toSentenceCase(hazard)}: ${detailValue}`);
+    }
+  });
   
   return details.length > 0 ? details.join('\n') : 'No details provided';
 }
@@ -199,21 +210,21 @@ export function processFirstAidAssessmentData(data: FirstAidNeedsAssessment): Pr
   const workerConditionDetails: string[] = [];
   
   // Add specific worker condition details
-  if (data.travel_a_lot_details) workerConditionDetails.push(`Travel a lot: ${data.travel_a_lot_details}`);
-  if (data.work_remotely_details) workerConditionDetails.push(`Work remotely: ${data.work_remotely_details}`);
-  if (data.work_alone_details) workerConditionDetails.push(`Work alone: ${data.work_alone_details}`);
-  if (data.work_shifts_details) workerConditionDetails.push(`Work shifts: ${data.work_shifts_details}`);
-  if (data.out_of_hours_details) workerConditionDetails.push(`Out of hours: ${data.out_of_hours_details}`);
-  if (data.others_details) workerConditionDetails.push(`Others: ${data.others_details}`);
+  if (data.travelALotDetails || data.travel_a_lot_details) workerConditionDetails.push(`Travel a lot: ${data.travelALotDetails || data.travel_a_lot_details}`);
+  if (data.workRemotelyDetails || data.work_remotely_details) workerConditionDetails.push(`Work remotely: ${data.workRemotelyDetails || data.work_remotely_details}`);
+  if (data.workAloneDetails || data.work_alone_details) workerConditionDetails.push(`Work alone: ${data.workAloneDetails || data.work_alone_details}`);
+  if (data.workShiftsDetails || data.work_shifts_details) workerConditionDetails.push(`Work shifts: ${data.workShiftsDetails || data.work_shifts_details}`);
+  if (data.outOfHoursDetails || data.out_of_hours_details) workerConditionDetails.push(`Out of hours: ${data.outOfHoursDetails || data.out_of_hours_details}`);
+  if (data.othersDetails || data.others_details) workerConditionDetails.push(`Others: ${data.othersDetails || data.others_details}`);
   
   // Add health condition details
   const healthConditionDetails: string[] = [];
-  if (data.asthma_details) healthConditionDetails.push(`Asthma: ${data.asthma_details}`);
-  if (data.diabetes_details) healthConditionDetails.push(`Diabetes: ${data.diabetes_details}`);
-  if (data.severe_allergies_details) healthConditionDetails.push(`Severe allergies: ${data.severe_allergies_details}`);
-  if (data.epilepsy_details) healthConditionDetails.push(`Epilepsy: ${data.epilepsy_details}`);
-  if (data.heart_disease_details) healthConditionDetails.push(`Heart disease: ${data.heart_disease_details}`);
-  if (data.other_health_details) healthConditionDetails.push(`Other health conditions: ${data.other_health_details}`);
+  if (data.asthmaDetails || data.asthma_details) healthConditionDetails.push(`Asthma: ${data.asthmaDetails || data.asthma_details}`);
+  if (data.diabetesDetails || data.diabetes_details) healthConditionDetails.push(`Diabetes: ${data.diabetesDetails || data.diabetes_details}`);
+  if (data.severeAllergiesDetails || data.severe_allergies_details) healthConditionDetails.push(`Severe allergies: ${data.severeAllergiesDetails || data.severe_allergies_details}`);
+  if (data.epilepsyDetails || data.epilepsy_details) healthConditionDetails.push(`Epilepsy: ${data.epilepsyDetails || data.epilepsy_details}`);
+  if (data.heartDiseaseDetails || data.heart_disease_details) healthConditionDetails.push(`Heart disease: ${data.heartDiseaseDetails || data.heart_disease_details}`);
+  if (data.otherHealthDetails || data.other_health_details) healthConditionDetails.push(`Other health conditions: ${data.otherHealthDetails || data.other_health_details}`);
   
   sections.push({
     id: 'workers',
@@ -249,20 +260,20 @@ export function processFirstAidAssessmentData(data: FirstAidNeedsAssessment): Pr
   const injuryDetails: string[] = [];
   
   // Add specific injury details
-  if (data.broken_bone_details) injuryDetails.push(`Broken bone: ${data.broken_bone_details}`);
-  if (data.bleeding_details) injuryDetails.push(`Bleeding: ${data.bleeding_details}`);
-  if (data.fainting_details) injuryDetails.push(`Fainting: ${data.fainting_details}`);
-  if (data.burn_details) injuryDetails.push(`Burn: ${data.burn_details}`);
-  if (data.choking_details) injuryDetails.push(`Choking: ${data.choking_details}`);
-  if (data.eye_injury_details) injuryDetails.push(`Eye injury: ${data.eye_injury_details}`);
-  if (data.poisoning_details) injuryDetails.push(`Poisoning: ${data.poisoning_details}`);
-  if (data.severe_allergic_reaction_details) injuryDetails.push(`Severe allergic reaction: ${data.severe_allergic_reaction_details}`);
-  if (data.heart_attack_details) injuryDetails.push(`Heart attack: ${data.heart_attack_details}`);
-  if (data.stroke_details) injuryDetails.push(`Stroke: ${data.stroke_details}`);
-  if (data.seizure_details) injuryDetails.push(`Seizure: ${data.seizure_details}`);
-  if (data.asthma_attack_details) injuryDetails.push(`Asthma attack: ${data.asthma_attack_details}`);
-  if (data.diabetic_emergency_details) injuryDetails.push(`Diabetic emergency: ${data.diabetic_emergency_details}`);
-  if (data.other_injury_details) injuryDetails.push(`Other injuries: ${data.other_injury_details}`);
+  if (data.brokenBoneDetails || data.broken_bone_details) injuryDetails.push(`Broken bone: ${data.brokenBoneDetails || data.broken_bone_details}`);
+  if (data.bleedingDetails || data.bleeding_details) injuryDetails.push(`Bleeding: ${data.bleedingDetails || data.bleeding_details}`);
+  if (data.faintingDetails || data.fainting_details) injuryDetails.push(`Fainting: ${data.faintingDetails || data.fainting_details}`);
+  if (data.burnDetails || data.burn_details) injuryDetails.push(`Burn: ${data.burnDetails || data.burn_details}`);
+  if (data.chokingDetails || data.choking_details) injuryDetails.push(`Choking: ${data.chokingDetails || data.choking_details}`);
+  if (data.eyeInjuryDetails || data.eye_injury_details) injuryDetails.push(`Eye injury: ${data.eyeInjuryDetails || data.eye_injury_details}`);
+  if (data.poisoningDetails || data.poisoning_details) injuryDetails.push(`Poisoning: ${data.poisoningDetails || data.poisoning_details}`);
+  if (data.severeAllergicReactionDetails || data.severe_allergic_reaction_details) injuryDetails.push(`Severe allergic reaction: ${data.severeAllergicReactionDetails || data.severe_allergic_reaction_details}`);
+  if (data.heartAttackDetails || data.heart_attack_details) injuryDetails.push(`Heart attack: ${data.heartAttackDetails || data.heart_attack_details}`);
+  if (data.strokeDetails || data.stroke_details) injuryDetails.push(`Stroke: ${data.strokeDetails || data.stroke_details}`);
+  if (data.seizureDetails || data.seizure_details) injuryDetails.push(`Seizure: ${data.seizureDetails || data.seizure_details}`);
+  if (data.asthmaAttackDetails || data.asthma_attack_details) injuryDetails.push(`Asthma attack: ${data.asthmaAttackDetails || data.asthma_attack_details}`);
+  if (data.diabeticEmergencyDetails || data.diabetic_emergency_details) injuryDetails.push(`Diabetic emergency: ${data.diabeticEmergencyDetails || data.diabetic_emergency_details}`);
+  if (data.otherInjuryDetails || data.other_injury_details) injuryDetails.push(`Other injuries: ${data.otherInjuryDetails || data.other_injury_details}`);
   
   sections.push({
     id: 'previous-injuries',
